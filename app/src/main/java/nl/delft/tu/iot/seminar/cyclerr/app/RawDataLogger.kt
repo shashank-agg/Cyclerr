@@ -18,20 +18,13 @@ class RawDataLogger(val sensorManager: SensorManager) : SensorEventListener {
 
     private val sensor: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
 
-    fun newWriter(): OutputStreamWriter {
-        val f =
-            File(
-                Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS),
-                "0rawdata_${Instant.now()}.csv"
-            )
-        f.createNewFile()
-        return f.writer()
+    private var accelerationDataReceiver: AccelerationDataReceiver? = null
+
+    fun register(accelerationDataReceiver: AccelerationDataReceiver){
+        this.accelerationDataReceiver = accelerationDataReceiver;
     }
 
-    private var csvFileWriter: OutputStreamWriter? = null;
-
     fun start() {
-        csvFileWriter = newWriter();
         sensorManager.registerListener(this, sensor, SENSOR_DELAY_FASTEST)
     }
 
@@ -48,14 +41,27 @@ class RawDataLogger(val sensorManager: SensorManager) : SensorEventListener {
         val accY = event.values.get(1)
         val accZ = event.values.get(2)
 
-        csvFileWriter?.append("$time,$accX,$accY,$accZ,$accuracy\n")
+        val data = AccelerationData(time, accX, accY, accZ, accuracy)
 
+        accelerationDataReceiver?.onAccelerationDataReceived(data)
 
-        Log.d(TAG, "$time $accX $accY $accZ $accuracy")
+//        Log.d(TAG, "$time $accX $accY $accZ $accuracy")
     }
 
     fun stop() {
-        csvFileWriter?.close()
         sensorManager.unregisterListener(this, sensor)
     }
+}
+
+data class AccelerationData(
+    val timestamp: Long,
+    val accelerationX: Float,
+    val accelerationY: Float,
+    val accelerationZ: Float,
+    val accuracy: Int
+)
+
+interface AccelerationDataReceiver {
+
+    fun onAccelerationDataReceived(accelerationData: AccelerationData)
 }

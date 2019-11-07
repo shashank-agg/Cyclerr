@@ -18,9 +18,13 @@ class MeasuringService : Service() {
 
     private val notificationHolder by lazy { NotificationHolder() }
 
+    private val fourierCadence = FourierCadence()
+
     private val rawDataLogger: RawDataLogger by lazy {
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        RawDataLogger(sensorManager)
+        val rawDataLogger = RawDataLogger(sensorManager)
+        rawDataLogger.register(fourierCadence)
+        rawDataLogger
     }
 
     private val foregroundController :ForegroundController = ForegroundController()
