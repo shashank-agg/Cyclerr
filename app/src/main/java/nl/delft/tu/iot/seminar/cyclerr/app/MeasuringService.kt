@@ -8,6 +8,7 @@ import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import java.time.Instant
 
 
 private val TAG = MeasuringService::class.java.simpleName
@@ -18,15 +19,24 @@ class MeasuringService : Service() {
 
     private val notificationHolder by lazy { NotificationHolder() }
 
-    private val fourierCadence = FourierCadence()
+    private val filteringCadence = FilteringCadence()
+
+    private val dataUploader by lazy {DataUploader(this)}
 
     private val rawDataLogger: RawDataLogger by lazy {
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val rawDataLogger = RawDataLogger(sensorManager)
-        rawDataLogger.register(fourierCadence)
+        rawDataLogger.register(filteringCadence)
         rawDataLogger
     }
 
+    init {
+        filteringCadence.registerListener( object : CadenceUpdateListener {
+            override fun onCadenceUpdateListener(time: Instant, cadence: Double) {
+                dataUploader.newData(DataPoint(time, cadence))
+            }
+        })
+    }
     private val foregroundController :ForegroundController = ForegroundController()
 
 
@@ -74,12 +84,14 @@ class MeasuringService : Service() {
         Log.i(TAG, "Start Measuring")
         startService(Intent(applicationContext, MeasuringService::class.java))
         rawDataLogger.start()
+        dataUploader.newData(DataPoint(Instant.now(), 23.2))
     }
 
     fun stopMeasuring(){
         Log.i(TAG, "Stop Measuring")
         stopSelf()
         rawDataLogger.stop()
+        dataUploader.finishSending();
     }
 
     inner class ForegroundController{

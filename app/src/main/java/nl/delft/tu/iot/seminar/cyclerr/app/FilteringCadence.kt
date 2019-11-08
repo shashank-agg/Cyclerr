@@ -1,20 +1,31 @@
 package nl.delft.tu.iot.seminar.cyclerr.app
 
+import android.os.SystemClock
 import android.util.Log
+import java.time.Instant
+import java.time.Instant.ofEpochMilli
 
 private val TAG = FilteringCadence::class.java.simpleName
 
 class FilteringCadence : AccelerationDataReceiver{
+    override fun finish() {
+        //Nothing
+    }
 
     private val filter= MovingAverageFirFilter(70)
     private val filterCadence= MovingAverageFirFilter(5)
 
     private val average = RunningAverageOfLastN(4000)
 
+    private var cadenceUpdateListener: CadenceUpdateListener? = null
 
     var isBelow=true
     var lastDetection =0L
 
+
+    fun registerListener(cadenceUpdateListener: CadenceUpdateListener){
+        this.cadenceUpdateListener = cadenceUpdateListener
+    }
 
     override fun onAccelerationDataReceived(accelerationData: AccelerationData) {
 
@@ -23,6 +34,7 @@ class FilteringCadence : AccelerationDataReceiver{
         val accZ = accelerationData.accelerationZ.toDouble()
 
         val magnitude = Math.sqrt(accX*accX+ accY*accY + accZ* accZ)
+
         val filteredMagnitude = filter.apply(magnitude)
         val avg = average.apply(filteredMagnitude)
 
@@ -35,25 +47,27 @@ class FilteringCadence : AccelerationDataReceiver{
 
         if (!isBelow && filteredMagnitude < lowerLimit){
             isBelow = true
-            newPeriodDetected(accelerationData.timestamp-lastDetection)
+            newPeriodDetected(accelerationData.timestamp,accelerationData.timestamp-lastDetection)
             lastDetection = accelerationData.timestamp
-
-
         }
 
         Log.d(TAG, "$magnitude\t$filteredMagnitude\t$avg")
     }
 
-    private fun newPeriodDetected(period: Long) {
+    private fun newPeriodDetected(timeInNano: Long, period: Long) {
         val freq = 1e9 / period
         val filteredFreq = filterCadence.apply(freq)
         Log.d("DETECTED FREQUENCE", "FREQ:$freq \t FLATTENED FREQ: $filteredFreq")
+
+        val millisSinceNow = (SystemClock.elapsedRealtimeNanos() - timeInNano)/1000
+        val time= ofEpochMilli(System.currentTimeMillis() + millisSinceNow)
+        val cadence = (60.0/freq)
+        cadenceUpdateListener?.onCadenceUpdateListener(time, cadence)
     }
 
     inner class MovingAverageFirFilter(val n:Int){
 
         val values = DoubleArray(n)
-
         var index = 0;
 
         fun apply(value:Double):Double{
@@ -64,9 +78,9 @@ class FilteringCadence : AccelerationDataReceiver{
     }
 
     inner class RunningAverageOfLastN(val n:Int){
-        val values = DoubleArray(n)
+        private val values = DoubleArray(n)
 
-        var sum :Double = 0.0
+        private var sum :Double = 0.0
 
         var index = 0;
 
@@ -85,4 +99,8 @@ class FilteringCadence : AccelerationDataReceiver{
             return sum/nElements
         }
     }
+}
+
+interface CadenceUpdateListener {
+    fun onCadenceUpdateListener(time: Instant, cadence:Double)
 }
