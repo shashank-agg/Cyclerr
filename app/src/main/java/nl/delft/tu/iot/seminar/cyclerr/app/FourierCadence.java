@@ -7,8 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import org.apache.commons.math3.transform.*;
 import org.apache.commons.math3.complex.Complex;
@@ -18,6 +16,7 @@ public class FourierCadence implements AccelerationDataReceiver {
     private static final String TAG = FourierCadence.class.getSimpleName();
     private List<AccelerationData> accelerationData;
     private int count = 0;
+    private double cadence = 0;
 
     public FourierCadence() {
         accelerationData = new ArrayList<>();
@@ -25,32 +24,18 @@ public class FourierCadence implements AccelerationDataReceiver {
 
     @Override
     public void onAccelerationDataReceived(@NotNull AccelerationData data) {
-
-//        Log.d(TAG, String.format("%d: X=%.3f\t Y=%.3f\t Z=%.3f", data.getTimestamp()/1000000L,
-//                data.getAccelerationX(), data.getAccelerationY(), data.getAccelerationZ() ));
         accelerationData.add(data);
-
-    }
-
-    public void finish() {
-        double[] fftOutput =  transform();
-        double delta_time = (accelerationData.get(accelerationData.size() - 1).getTimestamp()
-                - accelerationData.get(0).getTimestamp())/1000000000;
-        int maxOutputIndex = 0;
-        for (int i = 1; i < accelerationData.size(); i++) {
-            if(fftOutput[i] > fftOutput[maxOutputIndex]) {
-                maxOutputIndex = i;
-            }
+        count++;
+        if(count >= 500) {
+            cadence = getCadence();
+            Log.d(TAG, "Frequency detected : " + cadence);
+            accelerationData.clear();
+            count = 0;
         }
-
-        double frequencyOfCycling = Double.valueOf(maxOutputIndex) / delta_time;
-        Log.d(TAG, "Frequency detected : " + frequencyOfCycling);
-        accelerationData = new ArrayList<>();
     }
 
-    private double[] transform()
+    private double getCadence()
     {
-//        accelerationData = accelerationData.subList(0, 255)
         int powerOf2 = (int) FastMath.log(2, accelerationData.size());
         powerOf2 += 1;
         double [] input = new double[(int) Math.pow(2, powerOf2)];
@@ -64,25 +49,36 @@ public class FourierCadence implements AccelerationDataReceiver {
             input[i] = 0;
         }
 
-        double[] tempConversion = new double[input.length];
-
+        double frequencyOfCycling = 0;
         FastFourierTransformer transformer = new FastFourierTransformer(DftNormalization.UNITARY);
         try {
             Complex[] complx = transformer.transform(input, TransformType.FORWARD);
 
+            int largestComponentIndex = 0;
+            double largestComponent = -1;
+
             for (int i = 0; i < complx.length; i++) {
                 double rr = (complx[i].getReal());
                 double ri = (complx[i].getImaginary());
-
-                tempConversion[i] = Math.sqrt((rr * rr) + (ri * ri));
-//                System.out.println(i + " : " + tempConversion[i]);
+                double frequencyIntensity = Math.sqrt((rr * rr) + (ri * ri));
+                if(frequencyIntensity < 5) {
+                    continue;
+                }
+                if(frequencyIntensity > largestComponent) {
+                    largestComponentIndex = i;
+                    largestComponent = Math.sqrt((rr * rr) + (ri * ri));
+                }
             }
 
+            double delta_time = (accelerationData.get(accelerationData.size() - 1).getTimestamp()
+                - accelerationData.get(0).getTimestamp())/Double.valueOf(1000000000);
+
+            frequencyOfCycling = Double.valueOf(largestComponentIndex) / delta_time;
         } catch (IllegalArgumentException e) {
             System.out.println(e);
         }
 
-        return tempConversion;
+        return frequencyOfCycling;
     }
 
 }

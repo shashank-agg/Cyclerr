@@ -50,7 +50,6 @@ class RawDataLogger(val sensorManager: SensorManager) : SensorEventListener {
 
     fun stop() {
         sensorManager.unregisterListener(this, sensor)
-        accelerationDataReceiver?.finish()
     }
 }
 
@@ -65,5 +64,4 @@ data class AccelerationData(
 interface AccelerationDataReceiver {
 
     fun onAccelerationDataReceived(accelerationData: AccelerationData)
-    fun finish()
 }
