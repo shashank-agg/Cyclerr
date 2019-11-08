@@ -20,7 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProviders
 
-private const val TAG = "MainActivity"
+private val TAG = MainActivity::class.java.simpleName
 
 class MainActivity : AppCompatActivity() {
 
