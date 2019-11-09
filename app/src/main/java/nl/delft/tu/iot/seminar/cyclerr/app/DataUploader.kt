@@ -28,7 +28,7 @@ class DataUploader(context: Context) : Runnable {
     private var handler = Handler()
 
     // TODO
-    private val url = "http://192.168.0.103:8080/data"
+    private val url = "https://iot.nonnenmacher.dev/data"
     private val queue = Volley.newRequestQueue(context)
 
     private var tripId: String? = null
