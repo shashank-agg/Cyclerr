@@ -23,11 +23,10 @@ private val TAG = DataUploader::class.java.simpleName
 
 class DataUploader(context: Context) : Runnable {
 
-    private val TIME_INTERVAL = 2000
+    private val TIME_INTERVAL = 5000
 
     private var handler = Handler()
 
-    // TODO
     private val url = "https://iot.nonnenmacher.dev/data"
     private val queue = Volley.newRequestQueue(context)
 
@@ -36,7 +35,6 @@ class DataUploader(context: Context) : Runnable {
 
     private var buffer: MutableList<DataPoint> = mutableListOf()
 
-    //TODO do sending here
     override fun run() {
         handler.postAtTime(this, uptimeMillis() + TIME_INTERVAL) //reschedule
         if (buffer.count() > 0) {
@@ -48,8 +46,8 @@ class DataUploader(context: Context) : Runnable {
     private fun sendBuffer(isLast: Boolean = false) {
         // Instantiate the RequestQueue.
         val tId = tripId ?: return
-        Log.d(TAG,"Sending to API: " + buffer.toString())
         val b = RequestBody(tId, index, isLast, buffer)
+        Log.d(TAG,"Sending to API: $b")
 
         //clear buffer now
         buffer = mutableListOf()
@@ -75,7 +73,10 @@ class DataUploader(context: Context) : Runnable {
         if (tripId == null) {
             startSending()
         }
-        buffer.add(DataPoint(time, speed, cadence))
+        val dataPoint = DataPoint(time, speed, cadence)
+        buffer.add(dataPoint)
+
+        Log.d(TAG,"New datapoint added: $dataPoint")
     }
 
     private fun startSending() {

@@ -5,23 +5,18 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.hardware.SensorManager.SENSOR_DELAY_FASTEST
-import android.os.Environment
-import android.os.Environment.DIRECTORY_DOWNLOADS
 import android.util.Log
-import java.io.File
-import java.io.OutputStreamWriter
-import java.time.Instant
 
-private val TAG = RawDataLogger::class.java.simpleName
+private val TAG = AccelerationSensorDataLogger::class.java.simpleName
 
-class RawDataLogger(val sensorManager: SensorManager) : SensorEventListener {
+class AccelerationSensorDataLogger(val sensorManager: SensorManager) : SensorEventListener {
 
     private val sensor: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
 
-    private var accelerationDataReceiver: AccelerationDataReceiver? = null
+    private var accelerationDataReceiver = mutableListOf<AccelerationDataReceiver>()
 
     fun register(accelerationDataReceiver: AccelerationDataReceiver){
-        this.accelerationDataReceiver = accelerationDataReceiver;
+        this.accelerationDataReceiver.add(accelerationDataReceiver)
     }
 
     fun start() {
@@ -43,7 +38,7 @@ class RawDataLogger(val sensorManager: SensorManager) : SensorEventListener {
 
         val data = AccelerationData(time, accX, accY, accZ, accuracy)
 
-        accelerationDataReceiver?.onAccelerationDataReceived(data)
+        accelerationDataReceiver.forEach { it.onAccelerationDataReceived(data)}
 
 //        Log.d(TAG, "$time $accX $accY $accZ $accuracy")
     }

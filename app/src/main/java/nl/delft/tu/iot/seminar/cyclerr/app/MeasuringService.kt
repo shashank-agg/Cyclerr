@@ -23,25 +23,25 @@ class MeasuringService : Service() {
     private val notificationHolder by lazy { NotificationHolder() }
 
     private val filteringCadence = FilteringCadence()
+    private val fileLogger = RawDataFileLogger()
 
     private val dataUploader by lazy {DataUploader(this)}
 
-    private val rawDataLogger: RawDataLogger by lazy {
+    private val accelerationSensorDataLogger: AccelerationSensorDataLogger by lazy {
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val rawDataLogger = RawDataLogger(sensorManager)
+        val rawDataLogger = AccelerationSensorDataLogger(sensorManager)
         rawDataLogger.register(filteringCadence)
+        rawDataLogger.register(fileLogger)
         rawDataLogger
     }
 
     private val speedCalculator: SpeedCalculator by lazy {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val speedCalculator = SpeedCalculator(locationManager)
-        speedCalculator.registerListener { time, speed -> dataUploader.newData(time, speed, filteringCadence.currentCadence) }
+        speedCalculator.registerListener { time, speed -> dataUploader.newData(time, speed, filteringCadence.getCurrentCadenceByTime(time)) }
         speedCalculator
     }
 
-    init {
-    }
     private val foregroundController :ForegroundController = ForegroundController()
 
 
@@ -88,15 +88,18 @@ class MeasuringService : Service() {
     fun startMeasuring(){
         Log.i(TAG, "Start Measuring")
         startService(Intent(applicationContext, MeasuringService::class.java))
-        rawDataLogger.start()
+        accelerationSensorDataLogger.start()
         speedCalculator.start(applicationContext)
         dataUploader.newData(Instant.now(), 10.0f, 23.2) // first mock value
+
+        fileLogger.startNewMeasurement()
     }
 
     fun stopMeasuring(){
         Log.i(TAG, "Stop Measuring")
         stopSelf()
-        rawDataLogger.stop()
+        speedCalculator.stop()
+        accelerationSensorDataLogger.stop()
         dataUploader.finishSending();
     }
 
