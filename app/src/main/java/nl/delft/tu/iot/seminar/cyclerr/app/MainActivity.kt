@@ -7,15 +7,13 @@ import android.content.Context.BIND_AUTO_CREATE
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.widget.TextView
 import android.widget.TextView.BufferType.NORMAL
-import android.widget.Toast.LENGTH_SHORT
-import android.widget.Toast.makeText
 import android.widget.ToggleButton
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProviders
@@ -29,7 +27,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textView: TextView
 
     private val serviceConnector by lazy { ServiceConnector(this) }
-
 
     private val viewModel: MyViewModel by lazy {
         ViewModelProviders.of(this).get(MyViewModel::class.java)
@@ -66,13 +63,15 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         serviceConnector.bindToService()
 
-        // Check whether this app has write external storage permission or not.
-            var writeExternalStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-// If do not grant write external storage permission.
+        var writeExternalStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        var accessFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if(writeExternalStoragePermission!= PackageManager.PERMISSION_GRANTED)
         {
-            // Request user to grant write external storage permission.
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1);
+        }
+        if(accessFineLocationPermission!= PackageManager.PERMISSION_GRANTED)
+        {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1);
         }
     }
 

@@ -5,7 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.hardware.SensorManager
-import android.os.*
+import android.location.LocationManager
+import android.os.Binder
+import android.os.Build
+import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.time.Instant
@@ -30,12 +33,14 @@ class MeasuringService : Service() {
         rawDataLogger
     }
 
+    private val speedCalculator: SpeedCalculator by lazy {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val speedCalculator = SpeedCalculator(locationManager)
+        speedCalculator.registerListener { time, speed -> dataUploader.newData(time, speed, filteringCadence.currentCadence) }
+        speedCalculator
+    }
+
     init {
-        filteringCadence.registerListener( object : CadenceUpdateListener {
-            override fun onCadenceUpdateListener(time: Instant, cadence: Double) {
-                dataUploader.newData(DataPoint(time, cadence))
-            }
-        })
     }
     private val foregroundController :ForegroundController = ForegroundController()
 
@@ -84,7 +89,8 @@ class MeasuringService : Service() {
         Log.i(TAG, "Start Measuring")
         startService(Intent(applicationContext, MeasuringService::class.java))
         rawDataLogger.start()
-        dataUploader.newData(DataPoint(Instant.now(), 23.2))
+        speedCalculator.start(applicationContext)
+        dataUploader.newData(Instant.now(), 10.0f, 23.2) // first mock value
     }
 
     fun stopMeasuring(){

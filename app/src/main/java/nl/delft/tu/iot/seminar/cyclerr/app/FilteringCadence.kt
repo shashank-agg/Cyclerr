@@ -1,16 +1,10 @@
 package nl.delft.tu.iot.seminar.cyclerr.app
 
-import android.os.SystemClock
-import android.util.Log
 import java.time.Instant
-import java.time.Instant.ofEpochMilli
 
 private val TAG = FilteringCadence::class.java.simpleName
 
 class FilteringCadence : AccelerationDataReceiver{
-    override fun finish() {
-        //Nothing
-    }
 
     private val filter= MovingAverageFirFilter(70)
     private val filterCadence= MovingAverageFirFilter(5)
@@ -54,7 +48,7 @@ class FilteringCadence : AccelerationDataReceiver{
             lastDetection = accelerationData.timestamp
         }
 
-        Log.d(TAG, "$magnitude\t$filteredMagnitude\t$avg")
+//        Log.d(TAG, "$magnitude\t$filteredMagnitude\t$avg")
     }
 
     private fun newPeriodDetected(timeInNano: Long, period: Long) {
@@ -64,7 +58,7 @@ class FilteringCadence : AccelerationDataReceiver{
 //        val time= ofEpochMilli(System.currentTimeMillis() + millisSinceNow)
 
         currentCadence = (60.0/freq)
-        Log.d("DETECTED FREQUENCE", "FREQ:$currentCadence")
+//        Log.d("DETECTED FREQUENCE", "FREQ:$currentCadence")
 
 //        cadenceUpdateListener?.onCadenceUpdateListener(time, cadence)
     }

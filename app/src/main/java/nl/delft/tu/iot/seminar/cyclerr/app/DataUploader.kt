@@ -9,12 +9,12 @@ import com.android.volley.ParseError
 import com.android.volley.Request
 import com.android.volley.Request.Method.POST
 import com.android.volley.Response
-import com.android.volley.toolbox.*
+import com.android.volley.toolbox.HttpHeaderParser
+import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
 import com.google.gson.annotations.Expose
 import java.nio.charset.Charset
 import java.time.Instant
-import java.time.Instant.now
 import java.util.*
 import java.io.UnsupportedEncodingException as Exception
 
@@ -39,8 +39,6 @@ class DataUploader(context: Context) : Runnable {
     //TODO do sending here
     override fun run() {
         handler.postAtTime(this, uptimeMillis() + TIME_INTERVAL) //reschedule
-        Log.d(TAG, "run() called $index")
-
         if (buffer.count() > 0) {
             sendBuffer()
             index++
@@ -50,7 +48,7 @@ class DataUploader(context: Context) : Runnable {
     private fun sendBuffer(isLast: Boolean = false) {
         // Instantiate the RequestQueue.
         val tId = tripId ?: return
-
+        Log.d(TAG,"Sending to API: " + buffer.toString())
         val b = RequestBody(tId, index, isLast, buffer)
 
         //clear buffer now
@@ -72,17 +70,17 @@ class DataUploader(context: Context) : Runnable {
         queue.add(request)
     }
 
-    fun newData(dataPoint: DataPoint) {
+
+    fun newData(time: Instant, speed: Float, cadence: Double) {
         if (tripId == null) {
             startSending()
         }
-        buffer.add(dataPoint)
+        buffer.add(DataPoint(time, speed, cadence))
     }
 
     private fun startSending() {
         tripId = UUID.randomUUID().toString()
         val b = handler.postAtTime(this, uptimeMillis() + TIME_INTERVAL) //reschedule
-        Log.d(TAG, "started handler: $b")
     }
 
     fun finishSending() {
@@ -106,10 +104,12 @@ data class RequestBody(
 )
 
 
-class DataPoint(time: Instant, @Expose val cadence: Double) {
+class DataPoint(time: Instant, @Expose val speed: Float, @Expose val cadence: Double) {
 
     @Expose
     val timestamp: String = time.toString()
+
+    override fun toString(): String = timestamp + ": Speed = " + speed + ", Cadence = " + cadence
 }
 
 
@@ -122,8 +122,6 @@ class GsonPostRequest(
     private val gson = Gson()
 
     override fun getBody(): ByteArray {
-
-        Log.d(TAG, "SEND:" + gson.toJson(body))
         return gson.toJson(body).toByteArray()
     }
 
