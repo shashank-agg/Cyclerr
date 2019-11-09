@@ -22,6 +22,9 @@ class FilteringCadence : AccelerationDataReceiver{
     var isBelow=true
     var lastDetection =0L
 
+    var currentCadence: Double = 0.0
+            private set
+
 
     fun registerListener(cadenceUpdateListener: CadenceUpdateListener){
         this.cadenceUpdateListener = cadenceUpdateListener
@@ -56,13 +59,14 @@ class FilteringCadence : AccelerationDataReceiver{
 
     private fun newPeriodDetected(timeInNano: Long, period: Long) {
         val freq = 1e9 / period
-        val filteredFreq = filterCadence.apply(freq)
-        Log.d("DETECTED FREQUENCE", "FREQ:$freq \t FLATTENED FREQ: $filteredFreq")
 
-        val millisSinceNow = (SystemClock.elapsedRealtimeNanos() - timeInNano)/1000
-        val time= ofEpochMilli(System.currentTimeMillis() + millisSinceNow)
-        val cadence = (60.0/freq)
-        cadenceUpdateListener?.onCadenceUpdateListener(time, cadence)
+//        val millisSinceNow = (SystemClock.elapsedRealtimeNanos() - timeInNano)/1000
+//        val time= ofEpochMilli(System.currentTimeMillis() + millisSinceNow)
+
+        currentCadence = (60.0/freq)
+        Log.d("DETECTED FREQUENCE", "FREQ:$currentCadence")
+
+//        cadenceUpdateListener?.onCadenceUpdateListener(time, cadence)
     }
 
     inner class MovingAverageFirFilter(val n:Int){
