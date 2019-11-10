@@ -16,48 +16,52 @@ import nl.delft.tu.iot.seminar.cyclerr.app.csv.CsvFileLogger
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.AccelerationSensorAdapter
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.RotationSensorAdapter
 import nl.delft.tu.iot.seminar.cyclerr.app.speed.SpeedCalculator
-import java.time.Instant
+import nl.delft.tu.iot.seminar.cyclerr.app.upload.DataUploader
 
 
 private val TAG = MeasuringService::class.java.simpleName
 
 class MeasuringService : Service() {
 
-    private val mBinder :Binder = LocalBinder()
+    private val mBinder: Binder = LocalBinder()
     private val notificationHolder by lazy { NotificationHolder() }
 
-    private val filteringCadence = FilteringCadence()
-
-    private val rotationFileLogger = CsvFileLogger("raw-rot")
-    private val accelerationFileLogger = CsvFileLogger("acc-rot")
-
-    private val dataUploader by lazy {DataUploader(this)}
-
-    private val accelerationSensorAdapter: AccelerationSensorAdapter by lazy {
+    private val processors: List<MeasurementProcessor> by lazy { //Import hast be lazy because context required
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val rawDataLogger =
-            AccelerationSensorAdapter(sensorManager)
-        rawDataLogger.register(filteringCadence)
-        rawDataLogger.register(accelerationFileLogger)
-        rawDataLogger
-    }
-    private val rotationSensorAdapter: RotationSensorAdapter by lazy {
-        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val rawDataLogger =
-            RotationSensorAdapter(sensorManager)
-        rawDataLogger.register(rotationFileLogger)
-        rawDataLogger
-    }
 
-    private val speedCalculator: SpeedCalculator by lazy {
+        // Initialise Sensor adapters
+        val accelerationSensorAdapter = AccelerationSensorAdapter(sensorManager)
+        val rotationSensorAdapter = RotationSensorAdapter(sensorManager)
+
+        // Initialise file loggers
+        val rotationFileLogger = CsvFileLogger("raw-rot")
+        val accelerationFileLogger = CsvFileLogger("acc-rot")
+
+        // Configure file loggers to log raw data
+        accelerationSensorAdapter.register(accelerationFileLogger)
+        rotationSensorAdapter.register(rotationFileLogger)
+
+        // Initialise cadence calculator
+        val filteringCadence = FilteringCadence()
+        accelerationSensorAdapter.register(filteringCadence)
+
+        //Initialise Data uploader
+        val dataUploader = DataUploader(this)
+
+        //Initialise speed
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val speedCalculator =
-            SpeedCalculator(locationManager)
-        speedCalculator.registerListener { time, speed -> dataUploader.newData(time, speed, filteringCadence.getCurrentCadenceByTime(time)) }
-        speedCalculator
+        val speedCalculator = SpeedCalculator(locationManager)
+        speedCalculator.registerListener { time, speed ->
+            dataUploader.newData(
+                time,
+                speed,
+                filteringCadence.getCurrentCadenceByTime(time)
+            )
+        }
+        listOf(accelerationSensorAdapter, rotationSensorAdapter, accelerationFileLogger, rotationFileLogger, dataUploader, speedCalculator)
     }
 
-    private val foregroundController :ForegroundController = ForegroundController()
+    private val foregroundController: ForegroundController = ForegroundController()
 
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -80,15 +84,11 @@ class MeasuringService : Service() {
         return true // Ensures onRebind() is called when a client re-binds.
     }
 
-//
-//    var mServiceHandler: Handler? = null
 
     override fun onCreate() {
         super.onCreate()
         Log.i(TAG, "in onCreate()")
-//        val handlerThread = HandlerThread(TAG)
-//        handlerThread.start()
-//        mServiceHandler = Handler(handlerThread.looper)
+
 
     }
 
@@ -98,44 +98,35 @@ class MeasuringService : Service() {
     }
 
 
-    fun startMeasuring(){
+    fun startMeasuring() {
         Log.i(TAG, "Start Measuring")
 
-        accelerationFileLogger.startNewMeasurement()
-        rotationFileLogger.startNewMeasurement()
-
         startService(Intent(applicationContext, MeasuringService::class.java))
-        accelerationSensorAdapter.start()
-        speedCalculator.start(applicationContext)
-        rotationSensorAdapter.start()
-        dataUploader.newData(Instant.now(), 10.0f, 23.2) // first mock value
 
+        processors.forEach{it.onMeasurementStart(applicationContext)}
     }
 
-    fun stopMeasuring(){
+    fun stopMeasuring() {
         Log.i(TAG, "Stop Measuring")
         stopSelf()
-        speedCalculator.stop()
-        accelerationSensorAdapter.stop()
-        rotationSensorAdapter.stop()
-        dataUploader.finishSending();
+        processors.forEach{it.onMeasurementEnd()}
     }
 
-    inner class ForegroundController{
+    inner class ForegroundController {
 
         var mChangingConfiguration = false;
 
-        fun bindingDetected(){
+        fun bindingDetected() {
             Log.i(TAG, "Stopping foreground service")
             stopForeground(true)
             mChangingConfiguration = false
         }
 
-        fun configurationChangeDetected(){
+        fun configurationChangeDetected() {
             mChangingConfiguration = true
         }
 
-        fun unbindingDetected(){
+        fun unbindingDetected() {
             if (!mChangingConfiguration) {
                 Log.i(TAG, "Starting foreground service")
                 startForeground(notificationHolder.id, notificationHolder.notification)
@@ -155,7 +146,8 @@ class MeasuringService : Service() {
         val id = 12343232
 
         init {
-            notificationManager = this@MeasuringService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager =
+                this@MeasuringService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             // Android O requires a Notification Channel.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -170,34 +162,33 @@ class MeasuringService : Service() {
         }
 
 
+        val notification: Notification
+            get() {
+                val text = "Measurign data"
 
-        val notification :Notification
-        get() {
-            val text = "Measurign data"
+                // The PendingIntent to launch activity.
+                val activityPendingIntent = PendingIntent.getActivity(
+                    this@MeasuringService, 0,
+                    Intent(this@MeasuringService, MainActivity::class.java), 0
+                )
 
-            // The PendingIntent to launch activity.
-            val activityPendingIntent = PendingIntent.getActivity(
-                this@MeasuringService, 0,
-                Intent(this@MeasuringService, MainActivity::class.java), 0
-            )
+                val builder = NotificationCompat.Builder(this@MeasuringService, CHANNEL_ID)
+                    .setContentText(text)
+                    .setContentTitle("Cyclerr active")
+                    .setOngoing(true)
+                    .setPriority(NotificationManager.IMPORTANCE_HIGH)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentIntent(activityPendingIntent)
+                    .setTicker(text)
+                    .setWhen(System.currentTimeMillis())
 
-            val builder = NotificationCompat.Builder(this@MeasuringService, CHANNEL_ID)
-                .setContentText(text)
-                .setContentTitle("Cyclerr active")
-                .setOngoing(true)
-                .setPriority(NotificationManager.IMPORTANCE_HIGH)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(activityPendingIntent)
-                .setTicker(text)
-                .setWhen(System.currentTimeMillis())
+                // Set the Channel ID for Android O.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    builder.setChannelId(CHANNEL_ID) // Channel ID
+                }
 
-            // Set the Channel ID for Android O.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                builder.setChannelId(CHANNEL_ID) // Channel ID
+                return builder.build()
             }
-
-            return builder.build()
-        }
 
     }
 
@@ -209,4 +200,12 @@ class MeasuringService : Service() {
         internal val service: MeasuringService
             get() = this@MeasuringService
     }
+}
+
+/**
+ * All data processors which are interested in the MeasurmentLifecycle
+ */
+interface MeasurementProcessor {
+    fun onMeasurementStart(context: Context) {}
+    fun onMeasurementEnd() {}
 }

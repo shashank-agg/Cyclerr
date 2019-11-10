@@ -8,12 +8,16 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.time.Instant;
+
+import nl.delft.tu.iot.seminar.cyclerr.app.MeasurementProcessor;
 
 import static java.time.Instant.ofEpochMilli;
 
 
-public class SpeedCalculator {
+public class SpeedCalculator implements MeasurementProcessor {
 
     private final String TAG = SpeedCalculator.class.getSimpleName();
 
@@ -47,8 +51,9 @@ public class SpeedCalculator {
         this.speedUpdateListener = speedUpdateListener;
     }
 
+    @Override
     @SuppressLint("MissingPermission")
-    public void start(Context context) {
+    public void onMeasurementStart(@NotNull Context context) {
 
         Log.d(TAG, "GPS Service started.");
         this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
@@ -56,11 +61,10 @@ public class SpeedCalculator {
 //        boolean isGPS = locationManager.isProviderEnabled (LocationManager.GPS_PROVIDER);
     }
 
-    public void stop() {
+    @Override
+    public void onMeasurementEnd() {
         locationManager.removeUpdates(locationListener);
+
     }
 }
 
-interface SpeedUpdateListener {
-    void onSpeedUpdateListener(Instant time, Float speed);
-}

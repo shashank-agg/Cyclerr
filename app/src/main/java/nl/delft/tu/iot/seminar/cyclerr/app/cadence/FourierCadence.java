@@ -5,6 +5,7 @@ import android.util.Log;
 import org.apache.commons.math3.util.FastMath;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +17,7 @@ import nl.delft.tu.iot.seminar.cyclerr.app.sensor.AccelerationDataReceiver;
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.SensorValue;
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.SensorValueReceiver;
 
-public class FourierCadence implements SensorValueReceiver {
+public class FourierCadence implements CadenceCalculator {
 
     private static final String TAG = FourierCadence.class.getSimpleName();
     private List<SensorValue> accelerationData;
@@ -38,6 +39,11 @@ public class FourierCadence implements SensorValueReceiver {
             accelerationData.clear();
             count = 0;
         }
+    }
+
+    @Override
+    public double getCurrentCadenceByTime(@NotNull Instant time) {
+        return cadence;
     }
 
     private double getCadence()
@@ -86,6 +92,4 @@ public class FourierCadence implements SensorValueReceiver {
 
         return frequencyOfCycling;
     }
-
-
 }

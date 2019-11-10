@@ -10,7 +10,7 @@ import java.time.Instant
 
 private val TAG = FilteringCadence::class.java.simpleName
 
-class FilteringCadence : SensorValueReceiver {
+class FilteringCadence : CadenceCalculator {
 
     //parameters
     private val n_filter = 70
@@ -28,7 +28,7 @@ class FilteringCadence : SensorValueReceiver {
     private var lastMeasuredCadenceTime: Instant = Instant.now()
     private var lastMeasuredCadence: Double = 0.0
 
-    fun getCurrentCadenceByTime(time: Instant): Double {
+    override fun getCurrentCadenceByTime(time: Instant): Double {
 
         val timeSinceLastMeasurement = Duration.between(lastMeasuredCadenceTime, time).toMillis()
 

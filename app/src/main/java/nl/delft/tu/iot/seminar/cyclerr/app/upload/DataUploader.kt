@@ -1,4 +1,4 @@
-package nl.delft.tu.iot.seminar.cyclerr.app
+package nl.delft.tu.iot.seminar.cyclerr.app.upload
 
 import android.content.Context
 import android.os.Handler
@@ -13,6 +13,7 @@ import com.android.volley.toolbox.HttpHeaderParser
 import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
 import com.google.gson.annotations.Expose
+import nl.delft.tu.iot.seminar.cyclerr.app.MeasurementProcessor
 import java.nio.charset.Charset
 import java.time.Instant
 import java.util.*
@@ -21,7 +22,8 @@ import java.io.UnsupportedEncodingException as Exception
 
 private val TAG = DataUploader::class.java.simpleName
 
-class DataUploader(context: Context) : Runnable {
+class DataUploader(context: Context) : Runnable,
+    MeasurementProcessor {
 
     private val TIME_INTERVAL = 5000
 
@@ -79,12 +81,16 @@ class DataUploader(context: Context) : Runnable {
         Log.d(TAG,"New datapoint added: $dataPoint")
     }
 
-    private fun startSending() {
+    override fun onMeasurementStart(context: Context) {
+        startSending()
+    }
+
+    private fun startSending(){
         tripId = UUID.randomUUID().toString()
         val b = handler.postAtTime(this, uptimeMillis() + TIME_INTERVAL) //reschedule
     }
 
-    fun finishSending() {
+    override fun onMeasurementEnd() {
         //stop automatic callbacks
         handler.removeCallbacks(this)
 

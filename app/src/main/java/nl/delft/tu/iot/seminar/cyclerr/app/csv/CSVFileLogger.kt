@@ -1,14 +1,17 @@
 package nl.delft.tu.iot.seminar.cyclerr.app.csv
 
+import android.content.Context
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DOWNLOADS
+import nl.delft.tu.iot.seminar.cyclerr.app.MeasurementProcessor
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.SensorValue
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.SensorValueReceiver
 import java.io.File
 import java.io.OutputStreamWriter
 import java.time.Instant
 
-class CsvFileLogger(private val tag: String) : SensorValueReceiver {
+class CsvFileLogger(private val tag: String) : SensorValueReceiver, MeasurementProcessor {
+
 
     private fun newWriter(): OutputStreamWriter {
         val f =
@@ -22,7 +25,7 @@ class CsvFileLogger(private val tag: String) : SensorValueReceiver {
 
     private var csvFileWriter: OutputStreamWriter? = null;
 
-    fun startNewMeasurement() {
+    override fun onMeasurementStart(context: Context) {
         csvFileWriter?.close()
         csvFileWriter = newWriter()
     }
