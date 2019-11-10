@@ -1,4 +1,4 @@
-package nl.delft.tu.iot.seminar.cyclerr.app;
+package nl.delft.tu.iot.seminar.cyclerr.app.speed;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

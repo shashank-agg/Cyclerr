@@ -11,6 +11,11 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import nl.delft.tu.iot.seminar.cyclerr.app.cadence.FilteringCadence
+import nl.delft.tu.iot.seminar.cyclerr.app.csv.CsvFileLogger
+import nl.delft.tu.iot.seminar.cyclerr.app.sensor.AccelerationSensorAdapter
+import nl.delft.tu.iot.seminar.cyclerr.app.sensor.RotationSensorAdapter
+import nl.delft.tu.iot.seminar.cyclerr.app.speed.SpeedCalculator
 import java.time.Instant
 
 
@@ -19,25 +24,35 @@ private val TAG = MeasuringService::class.java.simpleName
 class MeasuringService : Service() {
 
     private val mBinder :Binder = LocalBinder()
-
     private val notificationHolder by lazy { NotificationHolder() }
 
     private val filteringCadence = FilteringCadence()
-    private val fileLogger = RawDataFileLogger()
+
+    private val rotationFileLogger = CsvFileLogger("raw-rot")
+    private val accelerationFileLogger = CsvFileLogger("acc-rot")
 
     private val dataUploader by lazy {DataUploader(this)}
 
-    private val accelerationSensorDataLogger: AccelerationSensorDataLogger by lazy {
+    private val accelerationSensorAdapter: AccelerationSensorAdapter by lazy {
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val rawDataLogger = AccelerationSensorDataLogger(sensorManager)
+        val rawDataLogger =
+            AccelerationSensorAdapter(sensorManager)
         rawDataLogger.register(filteringCadence)
-        rawDataLogger.register(fileLogger)
+        rawDataLogger.register(accelerationFileLogger)
+        rawDataLogger
+    }
+    private val rotationSensorAdapter: RotationSensorAdapter by lazy {
+        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val rawDataLogger =
+            RotationSensorAdapter(sensorManager)
+        rawDataLogger.register(rotationFileLogger)
         rawDataLogger
     }
 
     private val speedCalculator: SpeedCalculator by lazy {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val speedCalculator = SpeedCalculator(locationManager)
+        val speedCalculator =
+            SpeedCalculator(locationManager)
         speedCalculator.registerListener { time, speed -> dataUploader.newData(time, speed, filteringCadence.getCurrentCadenceByTime(time)) }
         speedCalculator
     }
@@ -65,8 +80,6 @@ class MeasuringService : Service() {
         return true // Ensures onRebind() is called when a client re-binds.
     }
 
-
-
 //
 //    var mServiceHandler: Handler? = null
 
@@ -87,19 +100,24 @@ class MeasuringService : Service() {
 
     fun startMeasuring(){
         Log.i(TAG, "Start Measuring")
+
+        accelerationFileLogger.startNewMeasurement()
+        rotationFileLogger.startNewMeasurement()
+
         startService(Intent(applicationContext, MeasuringService::class.java))
-        accelerationSensorDataLogger.start()
+        accelerationSensorAdapter.start()
         speedCalculator.start(applicationContext)
+        rotationSensorAdapter.start()
         dataUploader.newData(Instant.now(), 10.0f, 23.2) // first mock value
 
-        fileLogger.startNewMeasurement()
     }
 
     fun stopMeasuring(){
         Log.i(TAG, "Stop Measuring")
         stopSelf()
         speedCalculator.stop()
-        accelerationSensorDataLogger.stop()
+        accelerationSensorAdapter.stop()
+        rotationSensorAdapter.stop()
         dataUploader.finishSending();
     }
 
