@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Cyclerr</string>
     <string name="default_text">Hello World</string>
+    <string name="default_text_cadence">Cadence: NA</string>
+    <string name="default_text_speed">Speed: NA</string>
     <string name="button_active">Active</string>
     <string name="button_inactive">Inactive</string>
 </resources>

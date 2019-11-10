@@ -5,6 +5,7 @@
     android:gravity="center"
     android:orientation="vertical">
 
+
     <TextView
         android:id="@+id/textview"
         android:layout_width="wrap_content"
@@ -22,8 +23,29 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:paddingLeft="50dp"
+            android:paddingRight="50dp"
             android:text="@string/button_active" />
 
     </LinearLayout>
+
+
+    <TextView
+        android:id="@+id/cadenceTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="24dp"
+        android:textSize="30dp"
+        android:textStyle="bold"
+        android:text="@string/default_text_cadence" />
+
+    <TextView
+        android:id="@+id/speedTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="24dp"
+        android:textSize="30dp"
+        android:textStyle="bold"
+        android:text="@string/default_text_speed" />
 
 </LinearLayout>

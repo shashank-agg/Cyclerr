@@ -1,11 +1,8 @@
 package nl.delft.tu.iot.seminar.cyclerr.app
 
 import android.Manifest
-import android.content.ComponentName
-import android.content.Context
+import android.content.*
 import android.content.Context.BIND_AUTO_CREATE
-import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
@@ -17,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProviders
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 private val TAG = MainActivity::class.java.simpleName
 
@@ -25,6 +23,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var toggleButton: ToggleButton
     private lateinit var textView: TextView
+    private lateinit var cadenceTextView: TextView
+    private lateinit var speedTextView: TextView
 
     private val serviceConnector by lazy { ServiceConnector(this) }
 
@@ -42,9 +42,11 @@ class MainActivity : AppCompatActivity() {
 
         toggleButton = findViewById<ToggleButton>(R.id.toggleButton)
         textView = findViewById<TextView>(R.id.textview)
+        cadenceTextView = findViewById(R.id.cadenceTextView)
+        speedTextView = findViewById(R.id.speedTextView)
 
         //init with data from view model
-        textView.setText("${viewModel.currentIndex}", NORMAL)
+        textView.setText("Click to start tracking", NORMAL)
 
         toggleButton.setOnCheckedChangeListener { _, isChecked ->
             Log.d(TAG, "Toggel button changed: $isChecked")
@@ -57,6 +59,19 @@ class MainActivity : AppCompatActivity() {
                 serviceConnector.stopMeasuring()
             }
         }
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    val cadenceValue =
+                        intent.getDoubleExtra("CADENCE_VALUE", 0.0)
+                    val speedValue =
+                        intent.getFloatExtra("SPEED_VALUE", 0.0f)
+                    cadenceTextView.setText(String.format("CADENCE: %.2f", cadenceValue), NORMAL)
+                    speedTextView.setText(String.format("SPEED: %.2f", speedValue), NORMAL)
+                }
+            }, IntentFilter("MEASURING_SERVICE_BROADCAST_INTENT")
+        )
     }
 
     override fun onStart() {

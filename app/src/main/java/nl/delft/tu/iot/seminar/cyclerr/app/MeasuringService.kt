@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import nl.delft.tu.iot.seminar.cyclerr.app.cadence.FilteringCadence
 import nl.delft.tu.iot.seminar.cyclerr.app.csv.CsvFileLogger
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.AccelerationSensorAdapter
@@ -52,10 +53,19 @@ class MeasuringService : Service() {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val speedCalculator = SpeedCalculator(locationManager)
         speedCalculator.registerListener { time, speed ->
+            val currentCadence = filteringCadence.getCurrentCadenceByTime(time)
+
+            //Dispatch values to UI
+            val intent = Intent("MEASURING_SERVICE_BROADCAST_INTENT")
+            intent.putExtra("CADENCE_VALUE", currentCadence)
+            intent.putExtra("SPEED_VALUE", speed)
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+
+            //Dispatch values to dataUploader
             dataUploader.newData(
                 time,
                 speed,
-                filteringCadence.getCurrentCadenceByTime(time)
+                currentCadence
             )
         }
         listOf(accelerationSensorAdapter, rotationSensorAdapter, accelerationFileLogger, rotationFileLogger, dataUploader, speedCalculator)
