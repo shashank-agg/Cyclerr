@@ -7,11 +7,14 @@ private val TAG = FilteringCadence::class.java.simpleName
 
 class FilteringCadence : AccelerationDataReceiver{
 
-    private val filter= MovingAverageFirFilter(70)
+    //parameters
+    private val n_filter = 70
+    private val n_average = 1000
+    private val band_width = 0.08
 
-    private val average = RunningAverageOfLastN(4000)
+    private val filter= MovingAverageFirFilter(n_filter)
 
-    private var cadenceUpdateListener: CadenceUpdateListener? = null
+    private val average = RunningAverageOfLastN(n_average)
 
     var isBelow=true
     var lastDetectionInNanos =0L
@@ -22,16 +25,12 @@ class FilteringCadence : AccelerationDataReceiver{
 
     fun getCurrentCadenceByTime(time: Instant): Double {
 
-//        val timeSinceLastMeasurement = Duration.between(lastMeasuredCadenceTime, time).toMillis()
-//
-//        if (timeSinceLastMeasurement > 2000 || lastMeasuredCadence<30) { //Next cadence will be smaller than 30
-//            return 0.0
-//        }
-        return lastMeasuredCadence
-    }
+        val timeSinceLastMeasurement = Duration.between(lastMeasuredCadenceTime, time).toMillis()
 
-    fun registerListener(cadenceUpdateListener: CadenceUpdateListener){
-        this.cadenceUpdateListener = cadenceUpdateListener
+        if (timeSinceLastMeasurement > 2000 || lastMeasuredCadence<30) { //Next cadence will be smaller than 30
+            return 0.0
+        }
+        return lastMeasuredCadence
     }
 
     override fun onAccelerationDataReceived(accelerationData: AccelerationData) {
@@ -45,8 +44,8 @@ class FilteringCadence : AccelerationDataReceiver{
         val filteredMagnitude = filter.apply(magnitude)
         val avg = average.apply(filteredMagnitude)
 
-        val lowerLimit = avg*0.95
-        val upperLimit = avg*1.05
+        val lowerLimit = avg*(1.0-band_width/2)
+        val upperLimit = avg*(1.0+band_width/2)
 
         if (isBelow && filteredMagnitude > upperLimit){
             isBelow = false
@@ -63,9 +62,9 @@ class FilteringCadence : AccelerationDataReceiver{
         val freq = 1e9 / period
         val cadence = 60.0 / freq
 
-//        if (cadence>250){ //cadence greater then 250 is probably a false positive -> ignore
-//            return
-//        }
+        if (cadence>200){ //cadence greater then 250 is probably a false positive -> ignore
+            return
+        }
 
         //TODO Is exact calculation necessary? But how to sync with GPS?
         // val millisSinceNow = (SystemClock.elapsedRealtimeNanos() - timeInNano)/1000
@@ -74,8 +73,6 @@ class FilteringCadence : AccelerationDataReceiver{
         lastMeasuredCadence = cadence
 
 //        Log.d("DETECTED FREQUENCE", "FREQ:$lastMeasuredCadence")
-
-//        cadenceUpdateListener?.onCadenceUpdateListener(time, cadence)
     }
 
     inner class MovingAverageFirFilter(val n:Int){
@@ -112,8 +109,4 @@ class FilteringCadence : AccelerationDataReceiver{
             return sum/nElements
         }
     }
-}
-
-interface CadenceUpdateListener {
-    fun onCadenceUpdateListener(time: Instant, cadence:Double)
 }
