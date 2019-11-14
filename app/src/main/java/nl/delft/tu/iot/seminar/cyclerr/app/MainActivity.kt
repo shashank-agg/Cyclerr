@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
 
         shareButton = findViewById(R.id.button_id)
         shareButton.setOnClickListener {
-            val uri = Uri.parse("https://cyclerr.nonnenmacher.dev/detail?" + tripId) // missing 'http://' will cause crashed
+            val uri = Uri.parse("https://cyclerr.nonnenmacher.dev/streaming-page?" + tripId) // missing 'http://' will cause crashed
             val intent = Intent(Intent.ACTION_VIEW, uri)
             startActivity(intent)
         }
