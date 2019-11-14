@@ -25,7 +25,8 @@
             android:layout_weight="1"
             android:paddingLeft="50dp"
             android:paddingRight="50dp"
-            android:text="@string/button_active" />
+            android:text="@string/button_active"
+            android:textSize="18sp" />
 
     </LinearLayout>
 
@@ -56,5 +57,16 @@
         android:textSize="30dp"
         android:textStyle="bold"
         android:text="@string/default_altitude_speed" />
+
+    <Button
+        android:id="@+id/button_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#008577"
+        android:paddingHorizontal="50dp"
+        android:text="@string/share_button"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
 </LinearLayout>

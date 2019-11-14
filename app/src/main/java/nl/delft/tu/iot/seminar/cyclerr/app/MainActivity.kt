@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.*
 import android.content.Context.BIND_AUTO_CREATE
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.Button
 import android.widget.TextView
 import android.widget.TextView.BufferType.NORMAL
 import android.widget.ToggleButton
@@ -15,6 +17,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+
+
+
+
 
 private val TAG = MainActivity::class.java.simpleName
 
@@ -26,6 +32,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cadenceTextView: TextView
     private lateinit var speedTextView: TextView
     private lateinit var altitudeTextView: TextView
+    private lateinit var shareButton: Button
+
+    private var tripId: String? = null
 
     private val serviceConnector by lazy { ServiceConnector(this) }
 
@@ -45,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         textView = findViewById<TextView>(R.id.textview)
         cadenceTextView = findViewById(R.id.cadenceTextView)
         speedTextView = findViewById(R.id.speedTextView)
-        altitudeTextView= findViewById(R.id.altitudeTextView)
+        altitudeTextView = findViewById(R.id.altitudeTextView)
 
         //init with data from view model
         textView.setText("Click to start tracking", NORMAL)
@@ -71,14 +80,22 @@ class MainActivity : AppCompatActivity() {
                         intent.getFloatExtra("SPEED_VALUE", 0.0f)
                     val altitudeValue =
                         intent.getDoubleExtra("ALTITUDE_VALUE", 0.0)
+
+                    tripId = intent.getStringExtra("TRIP_ID")
                     cadenceTextView.setText(String.format("CADENCE: %.2f", cadenceValue), NORMAL)
                     speedTextView.setText(String.format("SPEED: %.2f", speedValue), NORMAL)
                     altitudeTextView.setText(String.format("ALTITUDE: %.2f", altitudeValue), NORMAL)
                 }
             }, IntentFilter("MEASURING_SERVICE_BROADCAST_INTENT")
         )
-    }
 
+        shareButton = findViewById(R.id.button_id)
+        shareButton.setOnClickListener {
+            val uri = Uri.parse("https://cyclerr.nonnenmacher.dev/detail/" + tripId) // missing 'http://' will cause crashed
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            startActivity(intent)
+        }
+    }
     override fun onStart() {
         super.onStart()
         serviceConnector.bindToService()

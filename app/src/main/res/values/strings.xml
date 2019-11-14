@@ -4,6 +4,7 @@
     <string name="default_text_cadence">Cadence: NA</string>
     <string name="default_text_speed">Speed: NA</string>
     <string name="default_altitude_speed">Altitude: NA</string>
+    <string name="share_button">Share</string>
     <string name="button_active">Active</string>
     <string name="button_inactive">Inactive</string>
 </resources>

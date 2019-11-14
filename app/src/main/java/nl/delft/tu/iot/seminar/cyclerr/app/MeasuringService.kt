@@ -27,7 +27,7 @@ class MeasuringService : Service() {
 
     private val mBinder: Binder = LocalBinder()
     private val notificationHolder by lazy { NotificationHolder() }
-
+    private var tripId: String? = null
     private val processors: List<MeasurementProcessor> by lazy { //Import hast be lazy because context required
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -63,10 +63,11 @@ class MeasuringService : Service() {
             intent.putExtra("CADENCE_VALUE", currentCadence)
             intent.putExtra("SPEED_VALUE", speed)
             intent.putExtra("ALTITUDE_VALUE", altitude)
+            intent.putExtra("TRIP_ID", tripId)
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 
             //Dispatch values to dataUploader
-            dataUploader.newData(
+            tripId = dataUploader.newData(
                 time,
                 speed,
                 currentCadence,

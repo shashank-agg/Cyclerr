@@ -71,13 +71,13 @@ class DataUploader(context: Context) : Runnable,
     }
 
 
-    fun newData(time: Instant, speed: Float, cadence: Double, altitude: Double) {
+    fun newData(time: Instant, speed: Float, cadence: Double, altitude: Double): String? {
         if (tripId == null) {
             startSending()
         }
         val dataPoint = DataPoint(time, speed, cadence, altitude)
         buffer.add(dataPoint)
-
+        return tripId
 //        Log.d(TAG,"New datapoint added: $dataPoint")
     }
 
@@ -85,7 +85,7 @@ class DataUploader(context: Context) : Runnable,
         startSending()
     }
 
-    private fun startSending(){
+    private fun startSending() {
         tripId = UUID.randomUUID().toString()
         val b = handler.postAtTime(this, uptimeMillis() + TIME_INTERVAL) //reschedule
     }
