@@ -26,10 +26,9 @@ public class SpeedCalculator implements MeasurementProcessor {
 
     private LocationListener locationListener = new LocationListener() {
         public void onLocationChanged(Location location) {
-            Log.d(TAG, "Location received: " + location);
             // Called when a new location is found by the network location provider.
             Instant timeNow = ofEpochMilli(System.currentTimeMillis());
-            speedUpdateListener.onSpeedUpdateListener(timeNow, location.getSpeed());
+            speedUpdateListener.onSpeedUpdateListener(timeNow, location.getSpeed(), location.getAltitude());
         }
 
         public void onStatusChanged(String provider, int status, Bundle extras) {

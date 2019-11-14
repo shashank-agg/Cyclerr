@@ -48,4 +48,13 @@
         android:textStyle="bold"
         android:text="@string/default_text_speed" />
 
+    <TextView
+        android:id="@+id/altitudeTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="24dp"
+        android:textSize="30dp"
+        android:textStyle="bold"
+        android:text="@string/default_altitude_speed" />
+
 </LinearLayout>

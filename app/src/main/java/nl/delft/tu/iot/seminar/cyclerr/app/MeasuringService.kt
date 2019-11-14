@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import nl.delft.tu.iot.seminar.cyclerr.app.cadence.FilteringCadence
+import nl.delft.tu.iot.seminar.cyclerr.app.cadence.FourierCadence
 import nl.delft.tu.iot.seminar.cyclerr.app.csv.CsvFileLogger
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.AccelerationSensorAdapter
 import nl.delft.tu.iot.seminar.cyclerr.app.sensor.RotationSensorAdapter
@@ -39,12 +40,14 @@ class MeasuringService : Service() {
         val accelerationFileLogger = CsvFileLogger("acc-rot")
 
         // Configure file loggers to log raw data
-        accelerationSensorAdapter.register(accelerationFileLogger)
+//        accelerationSensorAdapter.register(accelerationFileLogger)
         rotationSensorAdapter.register(rotationFileLogger)
 
         // Initialise cadence calculator
         val filteringCadence = FilteringCadence()
-        accelerationSensorAdapter.register(filteringCadence)
+        val fourierCadence = FourierCadence()
+//        accelerationSensorAdapter.register(filteringCadence)
+        rotationSensorAdapter.register(fourierCadence)
 
         //Initialise Data uploader
         val dataUploader = DataUploader(this)
@@ -52,20 +55,22 @@ class MeasuringService : Service() {
         //Initialise speed
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val speedCalculator = SpeedCalculator(locationManager)
-        speedCalculator.registerListener { time, speed ->
-            val currentCadence = filteringCadence.getCurrentCadenceByTime(time)
+        speedCalculator.registerListener { time, speed, altitude ->
+            val currentCadence = fourierCadence.getCurrentCadenceByTime(time)
 
             //Dispatch values to UI
             val intent = Intent("MEASURING_SERVICE_BROADCAST_INTENT")
             intent.putExtra("CADENCE_VALUE", currentCadence)
             intent.putExtra("SPEED_VALUE", speed)
+            intent.putExtra("ALTITUDE_VALUE", altitude)
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 
             //Dispatch values to dataUploader
             dataUploader.newData(
                 time,
                 speed,
-                currentCadence
+                currentCadence,
+                altitude
             )
         }
         listOf(accelerationSensorAdapter, rotationSensorAdapter, accelerationFileLogger, rotationFileLogger, dataUploader, speedCalculator)

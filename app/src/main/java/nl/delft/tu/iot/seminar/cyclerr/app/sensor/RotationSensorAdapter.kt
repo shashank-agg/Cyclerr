@@ -19,9 +19,9 @@ class RotationSensorValue(event: SensorEvent) : SensorValue {
 
     override val time: Long = event.timestamp
     val rotX: Float = event.values.get(0)
-    val rotY: Float = event.values.get(2)
-    val rotZ: Float = event.values.get(3)
-    override val scalar: Float = event.values.get(4)
+    val rotY: Float = event.values.get(1)
+    val rotZ: Float = event.values.get(2)
+    override val scalar: Float = Math.sqrt( (rotX*rotX+ rotY*rotY + rotZ* rotZ).toDouble()).toFloat()
     val accuracy: Int = event.accuracy
 
     override fun asCSVRow(): String {

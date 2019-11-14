@@ -59,7 +59,7 @@ class DataUploader(context: Context) : Runnable,
             url, b,
             Response.Listener<String> { response ->
                 // Display the first 500 characters of the response string.
-                Log.d(TAG, "Response is: $response")
+//                Log.d(TAG, "Response is: $response")
             },
             Response.ErrorListener { error ->
                 Log.d(TAG, "That didn't work! $error")
@@ -71,14 +71,14 @@ class DataUploader(context: Context) : Runnable,
     }
 
 
-    fun newData(time: Instant, speed: Float, cadence: Double) {
+    fun newData(time: Instant, speed: Float, cadence: Double, altitude: Double) {
         if (tripId == null) {
             startSending()
         }
-        val dataPoint = DataPoint(time, speed, cadence)
+        val dataPoint = DataPoint(time, speed, cadence, altitude)
         buffer.add(dataPoint)
 
-        Log.d(TAG,"New datapoint added: $dataPoint")
+//        Log.d(TAG,"New datapoint added: $dataPoint")
     }
 
     override fun onMeasurementStart(context: Context) {
@@ -111,12 +111,14 @@ data class RequestBody(
 )
 
 
-class DataPoint(time: Instant, @Expose val speed: Float, @Expose val cadence: Double) {
+class DataPoint(
+    time: Instant, @Expose val speed: Float, @Expose val cadence: Double, @Expose val altitude: Double) {
 
     @Expose
     val timestamp: String = time.toString()
 
-    override fun toString(): String = timestamp + ": Speed = " + speed + ", Cadence = " + cadence
+    override fun toString(): String =
+        "$timestamp: Speed = $speed, Cadence = $cadence, Altitude = $altitude";
 }
 
 

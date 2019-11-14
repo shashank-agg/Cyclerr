@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textView: TextView
     private lateinit var cadenceTextView: TextView
     private lateinit var speedTextView: TextView
+    private lateinit var altitudeTextView: TextView
 
     private val serviceConnector by lazy { ServiceConnector(this) }
 
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         textView = findViewById<TextView>(R.id.textview)
         cadenceTextView = findViewById(R.id.cadenceTextView)
         speedTextView = findViewById(R.id.speedTextView)
+        altitudeTextView= findViewById(R.id.altitudeTextView)
 
         //init with data from view model
         textView.setText("Click to start tracking", NORMAL)
@@ -67,8 +69,11 @@ class MainActivity : AppCompatActivity() {
                         intent.getDoubleExtra("CADENCE_VALUE", 0.0)
                     val speedValue =
                         intent.getFloatExtra("SPEED_VALUE", 0.0f)
+                    val altitudeValue =
+                        intent.getDoubleExtra("ALTITUDE_VALUE", 0.0)
                     cadenceTextView.setText(String.format("CADENCE: %.2f", cadenceValue), NORMAL)
                     speedTextView.setText(String.format("SPEED: %.2f", speedValue), NORMAL)
+                    altitudeTextView.setText(String.format("ALTITUDE: %.2f", altitudeValue), NORMAL)
                 }
             }, IntentFilter("MEASURING_SERVICE_BROADCAST_INTENT")
         )
