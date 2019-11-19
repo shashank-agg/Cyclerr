@@ -4,8 +4,8 @@ This repository contains all implementation related to the "Cyclerr" projected i
 IN4398 Advanced Practical IoT and Seminar (2019/20 Q1).
 
 
-* [Presentation](presentation.pdf`)
-* [Video](presentation.pdf`)
+* [Presentation](presentation.pdf)
+* [Video](video.mp4)
 * [Cyclerr App](android)
 * [Cyclerr Back End](backend)
 * [Cyclerr Web App](webapp)
