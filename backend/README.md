@@ -15,5 +15,3 @@ Additionally the API is deployed and can be called : https://iot.nonnenmacher.de
 
 ## Docker
 The dockerfile can be build with `docker build .`
-
-
