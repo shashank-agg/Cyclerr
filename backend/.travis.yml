@@ -1,0 +1,35 @@
+language: java
+install: true
+
+os: linux
+dist: trusty
+jdk: oraclejdk8
+
+services:
+  - docker
+
+stages:
+  - name: build
+    if: branch != master
+  - name: build-and-publish
+    if: branch = master
+
+jobs:
+  include:
+    - stage: build
+      script:
+        - ./gradlew clean build docker --quiet --stacktrace
+    - stage: build-and-publish
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin cloud.canister.io:5000
+        - ./gradlew clean build docker dockerPush dockerPushLatest --quiet --stacktrace
+
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
