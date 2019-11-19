@@ -14,6 +14,7 @@ IN4398 Advanced Practical IoT and Seminar (2019/20 Q1).
 
 ### Android
 
+For running this project use [Android Studio](https://developer.android.com/studio) and make sure that you give the app all permissions (e.g. GPS) when asked. 
 
 ### Back End
 
